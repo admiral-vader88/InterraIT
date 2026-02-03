@@ -32,31 +32,3 @@ print("Temp after calibration:", s1.get_temperature())
 s1.set_temperature(31.0)
 print("Updated Temp:", s1.get_temperature())
 
-# basic oops for robot
-class RobotArm:
-    def __init__(self, robot_name, joint_angle):
-        self.robot_name = robot_name        # public
-        self.__joint_angle = joint_angle    # private-like
-
-    def get_joint_angle(self):
-        return self.__joint_angle
-
-    def set_joint_angle(self, angle):
-        if 0 <= angle <= 180:
-            self.__joint_angle = angle
-        else:
-            raise ValueError("Joint angle must be between 0 and 180 degrees!")
-
-    def move_to(self, angle):
-        self.set_joint_angle(angle)
-        print(f"{self.robot_name} arm moved to {self.__joint_angle} degrees")
-
-
-# Example
-arm = RobotArm("ThrowerBot", 45)
-print(arm.robot_name)
-print("Initial Angle:", arm.get_joint_angle())
-
-arm.move_to(90)
-print("Final Angle:", arm.get_joint_angle())
-
