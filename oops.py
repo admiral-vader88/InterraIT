@@ -1,34 +1,80 @@
 # basic code for a smart sensor which includes temperature + calibration
-class SmartSensor:
+from dataclasses import dataclass
+
+# Struct-like container (like C++ struct)
+@dataclass
+class SensorPacket:
+    sensor_id: str
+    value: float
+    unit: str
+
+
+# Base class (Inheritance + Polymorphism)
+class Sensor:
+    def __init__(self, sensor_id):
+        self.sensor_id = sensor_id   # public
+        self.__is_active = True      # private-like
+
+    def get_status(self):
+        return self.__is_active
+
+    def set_status(self, status: bool):
+        self.__is_active = status
+
+    # Polymorphic method (to be overridden)
+    def read_value(self) -> SensorPacket:
+        raise NotImplementedError("Derived class must implement read_value()")
+
+
+# Derived class 1 (IoT sensor)
+class TemperatureSensor(Sensor):
     def __init__(self, sensor_id, temp_c):
-        self.sensor_id = sensor_id          # public
-        self.__temp_c = temp_c              # private-like
-        self.__calibration_offset = 0.0     # private-like
+        super().__init__(sensor_id)   # calling base constructor
+        self.__temp_c = temp_c        # private-like
+        self.__calibration = 0.0      # private-like
 
-    def get_temperature(self):
-        return self.__temp_c + self.__calibration_offset
-
-    def set_temperature(self, new_temp):
-        if -50 <= new_temp <= 150:
-            self.__temp_c = new_temp
+    def set_temperature(self, temp):
+        if -50 <= temp <= 150:
+            self.__temp_c = temp
         else:
-            raise ValueError("Temperature out of sensor range!")
+            raise ValueError("Temperature out of range!")
 
     def calibrate(self, offset):
         if -10 <= offset <= 10:
-            self.__calibration_offset = offset
+            self.__calibration = offset
         else:
             raise ValueError("Calibration offset too large!")
 
+    # Polymorphism: overriding base method
+    def read_value(self) -> SensorPacket:
+        value = self.__temp_c + self.__calibration
+        return SensorPacket(self.sensor_id, value, "C")
 
-# Example
-s1 = SmartSensor("DHT11_01", 28.5)
-print("Sensor:", s1.sensor_id)
-print("Temp:", s1.get_temperature())
 
-s1.calibrate(+1.2)
-print("Temp after calibration:", s1.get_temperature())
+# Derived class 2 (ROS simulation / robot battery)
+class BatterySensor(Sensor):
+    def __init__(self, sensor_id, battery_percent):
+        super().__init__(sensor_id)
+        self.__battery = battery_percent
 
-s1.set_temperature(31.0)
-print("Updated Temp:", s1.get_temperature())
+    def drain(self, amount):
+        self.__battery = max(0, self.__battery - amount)
 
+    # Polymorphism: overriding base method
+    def read_value(self) -> SensorPacket:
+        return SensorPacket(self.sensor_id, self.__battery, "%")
+
+sensors = [
+    TemperatureSensor("DHT11_01", 28.5),
+    BatterySensor("BAT_01", 85)
+]
+
+# Polymorphism 
+for s in sensors:
+    packet = s.read_value()
+    print(packet)
+
+# Encapsulation 
+temp_sensor = sensors[0]
+temp_sensor.calibrate(1.5)
+print(temp_sensor.read_value())
